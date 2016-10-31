@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>RxJs Canvas</title>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/rxjs/4.1.0/rx.all.js"></script>
+    <script>
+function canvasSpaceGame() {
+  // Get the canvas element.
+  var canvas = document.getElementById("myCanvas");
+
+  // Specify 2d canvas type.
+  var ctx = canvas.getContext("2d");
+  ctx.fill();
+  black = ctx.getImageData(0, 0, 30, 30);
+
+  // Draw space ship.
+  var ship = makeShip(ctx);
+
+  // initial ship position
+  var initial = {x: 0, y: 0};
+
+  var keyDowns = Rx.Observable.fromEvent(window, 'keydown')
+    .pluck('keyCode')
+
+    var leftKey = keyDowns
+    .filter(keyCode => keyCode === 37)
+    .scan(goLeft, initial)
+
+    var rightKey = keyDowns
+    .filter(keyCode => keyCode === 39)
+    .scan(goRight, initial)
+
+    var downKey = keyDowns
+    .filter(keyCode => keyCode === 40)
+    .scan(goDown, initial)
+
+    var upKey = keyDowns
+    .filter(keyCode => keyCode === 38)
+    .scan(goUp, initial)
+
+
+    Rx.Observable.empty()
+    .merge(rightKey)
+    .merge(leftKey)
+    .merge(downKey)
+    .merge(upKey)
+    .pairwise()
+    .subscribe(
+        data => {
+          console.log(JSON.stringify(data, null, 2)) ,
+          paint(ctx, black, ship, data[1], data[0])
+        },
+        error => console.log(error)
+        );
+}
+
+function paint(ctx, black, ship, position, oldPosition) {
+  // Put old background down to erase shipe.
+  ctx.putImageData(black, oldPosition.x, oldPosition.y);
+
+  // Put ship in new position.
+  ctx.putImageData(ship, position.x, position.y);
+
+}
+function goUp(acc) {
+  acc.y = acc.y - 30;
+  if (acc.y < 0) {
+    // If at edge, reset ship position and set flag.
+    acc.y = 0;
+  }
+
+  return acc;
+}
+
+function goDown(acc) {
+  acc.y = acc.y + 30;
+  if (acc.y > 270) {
+    // If at edge, reset ship position and set flag.
+    acc.y = 270;
+  }
+
+  return acc;
+}
+
+function goRight(acc) {
+  acc.x = acc.x + 30;
+  if (acc.x > 270) {
+    // If at edge, reset ship position and set flag.
+    acc.x = 270;
+  }
+
+  return acc;
+}
+
+function goLeft(acc) {
+  acc.x = acc.x - 30;
+  if (acc.x < 0) {
+    // If at edge, reset ship position and set flag.
+    acc.x = 0;
+  }
+
+  return acc;
+}
+
+function makeShip(ctx) {
+
+  // Paint it black.
+  ctx.fillStyle = "black";
+  ctx.rect(0, 0, 300, 300);
+  ctx.fill();
+
+  // Draw saucer bottom.
+  ctx.beginPath();
+  ctx.moveTo(28.4, 16.9);
+  ctx.bezierCurveTo(28.4, 19.7, 22.9, 22.0, 16.0, 22.0);
+  ctx.bezierCurveTo(9.1, 22.0, 3.6, 19.7, 3.6, 16.9);
+  ctx.bezierCurveTo(3.6, 14.1, 9.1, 11.8, 16.0, 11.8);
+  ctx.bezierCurveTo(22.9, 11.8, 28.4, 14.1, 28.4, 16.9);
+  ctx.closePath();
+  ctx.fillStyle = "rgb(222, 103, 0)";
+  ctx.fill();
+
+  // Draw saucer top.
+  ctx.beginPath();
+  ctx.moveTo(22.3, 12.0);
+  ctx.bezierCurveTo(22.3, 13.3, 19.4, 14.3, 15.9, 14.3);
+  ctx.bezierCurveTo(12.4, 14.3, 9.6, 13.3, 9.6, 12.0);
+  ctx.bezierCurveTo(9.6, 10.8, 12.4, 9.7, 15.9, 9.7);
+  ctx.bezierCurveTo(19.4, 9.7, 22.3, 10.8, 22.3, 12.0);
+  ctx.closePath();
+  ctx.fillStyle = "rgb(51, 190, 0)";
+  ctx.fill();
+
+  // Save ship data.
+  return ctx.getImageData(0, 0, 30, 30);
+}
+
+
+
+
+    </script>
+  </head>
+  <body onload="canvasSpaceGame()">
+    <h1>
+      Canvas Space Game
+    </h1>
+    <canvas id="myCanvas" width="300" height="300">
+    </canvas>
+  </body>
+</html>
