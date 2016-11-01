@@ -13,6 +13,7 @@ function canvasSpaceGame() {
   ctx.rect(0, 0, 300, 300);
   ctx.fillStyle = "black";
   ctx.fill();
+  stars(ctx);
 
   // Draw space ship.
   var ship = makeShip(ctx);
@@ -24,19 +25,19 @@ function canvasSpaceGame() {
     .pluck('code');
 
   var downKey = keyDowns
-    .filter(key => ['ArrowDown'].includes(key))
+    .filter(key => ['ArrowDown', 'KeyJ'].includes(key))
     .scan(goDown, initial);
 
   var rightKey = keyDowns
-    .filter(key => ['ArrowRight'].includes(key))
+    .filter(key => ['ArrowRight', 'KeyL'].includes(key))
     .scan(goRight, initial);
 
   var upKey = keyDowns
-    .filter(key => ['ArrowUp'].includes(key))
+    .filter(key => ['ArrowUp', 'KeyK'].includes(key))
     .scan(goUp, initial);
 
   var leftKey = keyDowns
-    .filter(key => ['ArrowLeft'].includes(key))
+    .filter(key => ['ArrowLeft', 'KeyH'].includes(key))
     .scan(goLeft, initial);
 
   var clicks = Rx.Observable.fromEvent(canvas, 'click')
@@ -46,24 +47,52 @@ function canvasSpaceGame() {
     .merge(rightKey)
     .merge(upKey)
     .merge(downKey)
+    .merge(clicks)
     .startWith(initial);
 
+  var timer = Rx.Observable.timer(0, 1000)
 
-    userEvents
+    Rx.Observable.combineLatest(userEvents, timer)
     .subscribe(
-        position => {
-          paint(ctx, ship, position)
+        data => {
+          paint(ctx, ship, data[0])
         },
         error => console.log(error)
         );
 
 }
 
+function stars(ctx) {
+
+  // Draw 50 stars.
+  for (i = 0; i <= 50; i++) {
+    // Get random positions for stars.
+    var x = Math.floor(Math.random() * 299);
+    var y = Math.floor(Math.random() * 299);
+
+    // Make the stars white
+    ctx.fillStyle = "white";
+
+    // Give the ship some room by painting black stars.
+    if (x < 30 || y < 30) ctx.fillStyle = "black";
+
+    // Draw an individual star.
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2, true);
+    ctx.closePath();
+    ctx.fill();
+
+  }
+}
+
+
 function paint(ctx, ship, position) {
   // Put black background down to erase shipe.
   ctx.rect(0, 0, 300, 300);
   ctx.fillStyle = "black";
   ctx.fill();
+
+  stars(ctx);
 
   // Put ship in new position.
   ctx.putImageData(ship, position.x, position.y);
