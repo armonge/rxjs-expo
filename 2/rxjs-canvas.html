@@ -10,6 +10,8 @@ function canvasSpaceGame() {
 
   // Specify 2d canvas type.
   var ctx = canvas.getContext("2d");
+  ctx.rect(0, 0, 300, 300);
+  ctx.fillStyle = "black";
   ctx.fill();
   black = ctx.getImageData(0, 0, 30, 30);
 
@@ -20,86 +22,96 @@ function canvasSpaceGame() {
   var initial = {x: 0, y: 0};
 
   var keyDowns = Rx.Observable.fromEvent(window, 'keydown')
-    .pluck('keyCode')
+    .pluck('code')
+    .filter(key => ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp'].includes(key))
 
-    var leftKey = keyDowns
-    .filter(keyCode => keyCode === 37)
-    .scan(goLeft, initial)
+    var clicks = Rx.Observable.fromEvent(canvas, 'click')
 
-    var rightKey = keyDowns
-    .filter(keyCode => keyCode === 39)
-    .scan(goRight, initial)
-
-    var downKey = keyDowns
-    .filter(keyCode => keyCode === 40)
-    .scan(goDown, initial)
-
-    var upKey = keyDowns
-    .filter(keyCode => keyCode === 38)
-    .scan(goUp, initial)
-
-
-    Rx.Observable.empty()
-    .merge(rightKey)
-    .merge(leftKey)
-    .merge(downKey)
-    .merge(upKey)
+    keyDowns
+    .merge(clicks)
+    .scan((acc, code) => {
+      switch(code) {
+      case 'ArrowRight': return goRight(acc);
+      case 'ArrowLeft': return goLeft(acc);
+      case 'ArrowDown': return goDown(acc);
+      case 'ArrowUp': return goUp(acc);
+      default: return goClick(code);
+      }
+    },initial)
+    .startWith(initial)
     .pairwise()
     .subscribe(
-        data => {
-          console.log(JSON.stringify(data, null, 2)) ,
-          paint(ctx, black, ship, data[1], data[0])
+        position => {
+          paint(ctx, black, ship, position)
         },
         error => console.log(error)
         );
+
 }
 
-function paint(ctx, black, ship, position, oldPosition) {
-  // Put old background down to erase shipe.
-  ctx.putImageData(black, oldPosition.x, oldPosition.y);
+
+function paint(ctx, black, ship, position) {
+  // Put black background down to erase shipe.
+  ctx.putImageData(black,  position[0].x, position[0].y);
 
   // Put ship in new position.
-  ctx.putImageData(ship, position.x, position.y);
+  ctx.putImageData(ship, position[1].x, position[1].y);
 
 }
+
+function goClick(event) {
+  return {
+    x: event.offsetX,
+    y: event.offsetY,
+  };
+}
+
 function goUp(acc) {
-  acc.y = acc.y - 30;
-  if (acc.y < 0) {
-    // If at edge, reset ship position and set flag.
-    acc.y = 0;
+  var y = acc.y - 30;
+  if (y < 0) {
+    y = 0;
   }
 
-  return acc;
+  return {
+    x: acc.x,
+    y: y
+  };
 }
 
 function goDown(acc) {
-  acc.y = acc.y + 30;
-  if (acc.y > 270) {
-    // If at edge, reset ship position and set flag.
-    acc.y = 270;
+  var y = acc.y + 30;
+  if (y > 270) {
+    y = 270;
   }
 
-  return acc;
+  return {
+    x: acc.x,
+    y: y
+  };
 }
 
 function goRight(acc) {
-  acc.x = acc.x + 30;
-  if (acc.x > 270) {
-    // If at edge, reset ship position and set flag.
-    acc.x = 270;
+  var x = acc.x + 30;
+  if (x > 270) {
+    x = 270;
   }
 
-  return acc;
+  return {
+    x: x,
+    y: acc.y
+  };
 }
 
 function goLeft(acc) {
-  acc.x = acc.x - 30;
-  if (acc.x < 0) {
-    // If at edge, reset ship position and set flag.
-    acc.x = 0;
+  var x = acc.x - 30;
+  if (x < 0) {
+    x = 0;
   }
 
-  return acc;
+  return {
+    x: x,
+    y: acc.y
+  };
 }
 
 function makeShip(ctx) {
